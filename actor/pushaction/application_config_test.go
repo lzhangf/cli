@@ -14,13 +14,13 @@ import (
 
 var _ = Describe("Application Config", func() {
 	var (
-		actor  *Actor
-		v2fake *pushactionfakes.FakeV2Actor
+		actor       *Actor
+		fakeV2Actor *pushactionfakes.FakeV2Actor
 	)
 
 	BeforeEach(func() {
-		v2fake = new(pushactionfakes.FakeV2Actor)
-		actor = NewActor(v2fake)
+		fakeV2Actor = new(pushactionfakes.FakeV2Actor)
+		actor = NewActor(fakeV2Actor)
 	})
 
 	Describe("Apply", func() {
@@ -68,7 +68,7 @@ var _ = Describe("Application Config", func() {
 
 			Context("when the update is successful", func() {
 				BeforeEach(func() {
-					v2fake.UpdateApplicationReturns(v2action.Application{}, v2action.Warnings{"update-warning"}, nil)
+					fakeV2Actor.UpdateApplicationReturns(v2action.Application{}, v2action.Warnings{"update-warning"}, nil)
 				})
 
 				It("updates the application", func() {
@@ -76,8 +76,8 @@ var _ = Describe("Application Config", func() {
 					Eventually(eventStream).Should(Receive(Equal(ApplicationUpdated)))
 					Eventually(eventStream).Should(Receive(Equal(Complete)))
 
-					Expect(v2fake.UpdateApplicationCallCount()).To(Equal(1))
-					Expect(v2fake.UpdateApplicationArgsForCall(0)).To(Equal(v2action.Application{
+					Expect(fakeV2Actor.UpdateApplicationCallCount()).To(Equal(1))
+					Expect(fakeV2Actor.UpdateApplicationArgsForCall(0)).To(Equal(v2action.Application{
 						Name:      "some-app-name",
 						GUID:      "some-app-guid",
 						SpaceGUID: "some-space-guid",
@@ -90,7 +90,7 @@ var _ = Describe("Application Config", func() {
 				var expectedErr error
 				BeforeEach(func() {
 					expectedErr = errors.New("oh my")
-					v2fake.UpdateApplicationReturns(v2action.Application{}, v2action.Warnings{"update-warning"}, expectedErr)
+					fakeV2Actor.UpdateApplicationReturns(v2action.Application{}, v2action.Warnings{"update-warning"}, expectedErr)
 				})
 
 				It("returns warnings and error and stops", func() {
@@ -104,7 +104,7 @@ var _ = Describe("Application Config", func() {
 		Context("when the app does not exist", func() {
 			Context("when the creation is successful", func() {
 				BeforeEach(func() {
-					v2fake.CreateApplicationReturns(v2action.Application{}, v2action.Warnings{"create-warning"}, nil)
+					fakeV2Actor.CreateApplicationReturns(v2action.Application{}, v2action.Warnings{"create-warning"}, nil)
 				})
 
 				It("creates the application", func() {
@@ -112,8 +112,8 @@ var _ = Describe("Application Config", func() {
 					Eventually(eventStream).Should(Receive(Equal(ApplicationCreated)))
 					Eventually(eventStream).Should(Receive(Equal(Complete)))
 
-					Expect(v2fake.CreateApplicationCallCount()).To(Equal(1))
-					Expect(v2fake.CreateApplicationArgsForCall(0)).To(Equal(v2action.Application{
+					Expect(fakeV2Actor.CreateApplicationCallCount()).To(Equal(1))
+					Expect(fakeV2Actor.CreateApplicationArgsForCall(0)).To(Equal(v2action.Application{
 						Name:      "some-app-name",
 						SpaceGUID: "some-space-guid",
 					}))
@@ -124,7 +124,7 @@ var _ = Describe("Application Config", func() {
 				var expectedErr error
 				BeforeEach(func() {
 					expectedErr = errors.New("oh my")
-					v2fake.CreateApplicationReturns(v2action.Application{}, v2action.Warnings{"create-warning"}, expectedErr)
+					fakeV2Actor.CreateApplicationReturns(v2action.Application{}, v2action.Warnings{"create-warning"}, expectedErr)
 				})
 
 				It("returns warnings and error and stops", func() {
@@ -138,6 +138,7 @@ var _ = Describe("Application Config", func() {
 
 	Describe("ConvertToApplicationConfig", func() {
 		var (
+			orgGUID      string
 			spaceGUID    string
 			manifestApps []manifest.Application
 
@@ -147,6 +148,7 @@ var _ = Describe("Application Config", func() {
 		)
 
 		BeforeEach(func() {
+			orgGUID = "some-org-guid"
 			spaceGUID = "some-space-guid"
 			manifestApps = []manifest.Application{{
 				Name: "some-app",
@@ -155,7 +157,7 @@ var _ = Describe("Application Config", func() {
 		})
 
 		JustBeforeEach(func() {
-			configs, warnings, executeErr = actor.ConvertToApplicationConfig(spaceGUID, manifestApps)
+			configs, warnings, executeErr = actor.ConvertToApplicationConfig(orgGUID, spaceGUID, manifestApps)
 		})
 
 		Context("when the application exists", func() {
@@ -168,7 +170,7 @@ var _ = Describe("Application Config", func() {
 					SpaceGUID: spaceGUID,
 				}
 
-				v2fake.GetApplicationByNameAndSpaceReturns(app, v2action.Warnings{"some-app-warning-1", "some-app-warning-2"}, nil)
+				fakeV2Actor.GetApplicationByNameAndSpaceReturns(app, v2action.Warnings{"some-app-warning-1", "some-app-warning-2"}, nil)
 			})
 
 			It("sets the current and desired application to the current", func() {
@@ -185,7 +187,7 @@ var _ = Describe("Application Config", func() {
 
 		Describe("when the application does not exist", func() {
 			BeforeEach(func() {
-				v2fake.GetApplicationByNameAndSpaceReturns(v2action.Application{}, v2action.Warnings{"some-app-warning-1", "some-app-warning-2"}, v2action.ApplicationNotFoundError{})
+				fakeV2Actor.GetApplicationByNameAndSpaceReturns(v2action.Application{}, v2action.Warnings{"some-app-warning-1", "some-app-warning-2"}, v2action.ApplicationNotFoundError{})
 			})
 
 			It("creates a new application and sets it to the desired application", func() {

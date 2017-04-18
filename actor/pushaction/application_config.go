@@ -20,7 +20,7 @@ func (actor Actor) Apply(config ApplicationConfig) (<-chan Event, <-chan Warning
 	errorStream := make(chan error)
 
 	go func() {
-		log.Debug("starting apply thread")
+		log.Debug("starting apply go routine")
 		defer close(eventStream)
 		defer close(warningsStream)
 		defer close(errorStream)
@@ -47,15 +47,14 @@ func (actor Actor) Apply(config ApplicationConfig) (<-chan Event, <-chan Warning
 			eventStream <- ApplicationCreated
 		}
 
-		log.Debug("sending complete")
+		log.Debug("completed apply")
 		eventStream <- Complete
-		log.Debug("sent complete")
 	}()
 
 	return eventStream, warningsStream, errorStream
 }
 
-func (actor Actor) ConvertToApplicationConfig(spaceGUID string, apps []manifest.Application) ([]ApplicationConfig, Warnings, error) {
+func (actor Actor) ConvertToApplicationConfig(orgGUID string, spaceGUID string, apps []manifest.Application) ([]ApplicationConfig, Warnings, error) {
 	var configs []ApplicationConfig
 	var warnings Warnings
 

@@ -8,4 +8,6 @@ type V2Actor interface {
 	CreateApplication(application v2action.Application) (v2action.Application, v2action.Warnings, error)
 	GetApplicationByNameAndSpace(name string, spaceGUID string) (v2action.Application, v2action.Warnings, error)
 	UpdateApplication(application v2action.Application) (v2action.Application, v2action.Warnings, error)
+	GetSharedDomain(domainGUID string) (v2action.Domain, v2action.Warnings, error)
+	GetPrivateDomain(domainGUID string) (v2action.Domain, v2action.Warnings, error)
 }

@@ -18,7 +18,7 @@ import (
 
 type V2PushActor interface {
 	Apply(config pushaction.ApplicationConfig) (<-chan pushaction.Event, <-chan pushaction.Warnings, <-chan error)
-	ConvertToApplicationConfig(spaceGUID string, apps []manifest.Application) ([]pushaction.ApplicationConfig, pushaction.Warnings, error)
+	ConvertToApplicationConfig(orgGUID string, spaceGUID string, apps []manifest.Application) ([]pushaction.ApplicationConfig, pushaction.Warnings, error)
 	MergeAndValidateSettingsAndManifests(cmdSettings pushaction.CommandLineSettings, apps []manifest.Application) ([]manifest.Application, error)
 }
 
@@ -98,7 +98,11 @@ func (cmd V2PushCommand) Execute(args []string) error {
 	cmd.UI.DisplayText("Getting app info...")
 
 	log.Info("converting manifests to ApplicationConfigs")
-	appConfigs, warnings, err := cmd.Actor.ConvertToApplicationConfig(cmd.Config.TargetedSpace().GUID, manifestApplications)
+	appConfigs, warnings, err := cmd.Actor.ConvertToApplicationConfig(
+		cmd.Config.TargetedOrganization().GUID,
+		cmd.Config.TargetedSpace().GUID,
+		manifestApplications,
+	)
 	cmd.UI.DisplayWarnings(warnings)
 	if err != nil {
 		log.Errorf("error converting manifest: %v", err)

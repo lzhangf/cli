@@ -55,6 +55,36 @@ type FakeV2Actor struct {
 		result2 v2action.Warnings
 		result3 error
 	}
+	GetSharedDomainStub        func(domainGUID string) (v2action.Domain, v2action.Warnings, error)
+	getSharedDomainMutex       sync.RWMutex
+	getSharedDomainArgsForCall []struct {
+		domainGUID string
+	}
+	getSharedDomainReturns struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}
+	getSharedDomainReturnsOnCall map[int]struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}
+	GetPrivateDomainStub        func(domainGUID string) (v2action.Domain, v2action.Warnings, error)
+	getPrivateDomainMutex       sync.RWMutex
+	getPrivateDomainArgsForCall []struct {
+		domainGUID string
+	}
+	getPrivateDomainReturns struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}
+	getPrivateDomainReturnsOnCall map[int]struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -222,6 +252,114 @@ func (fake *FakeV2Actor) UpdateApplicationReturnsOnCall(i int, result1 v2action.
 	}{result1, result2, result3}
 }
 
+func (fake *FakeV2Actor) GetSharedDomain(domainGUID string) (v2action.Domain, v2action.Warnings, error) {
+	fake.getSharedDomainMutex.Lock()
+	ret, specificReturn := fake.getSharedDomainReturnsOnCall[len(fake.getSharedDomainArgsForCall)]
+	fake.getSharedDomainArgsForCall = append(fake.getSharedDomainArgsForCall, struct {
+		domainGUID string
+	}{domainGUID})
+	fake.recordInvocation("GetSharedDomain", []interface{}{domainGUID})
+	fake.getSharedDomainMutex.Unlock()
+	if fake.GetSharedDomainStub != nil {
+		return fake.GetSharedDomainStub(domainGUID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fake.getSharedDomainReturns.result1, fake.getSharedDomainReturns.result2, fake.getSharedDomainReturns.result3
+}
+
+func (fake *FakeV2Actor) GetSharedDomainCallCount() int {
+	fake.getSharedDomainMutex.RLock()
+	defer fake.getSharedDomainMutex.RUnlock()
+	return len(fake.getSharedDomainArgsForCall)
+}
+
+func (fake *FakeV2Actor) GetSharedDomainArgsForCall(i int) string {
+	fake.getSharedDomainMutex.RLock()
+	defer fake.getSharedDomainMutex.RUnlock()
+	return fake.getSharedDomainArgsForCall[i].domainGUID
+}
+
+func (fake *FakeV2Actor) GetSharedDomainReturns(result1 v2action.Domain, result2 v2action.Warnings, result3 error) {
+	fake.GetSharedDomainStub = nil
+	fake.getSharedDomainReturns = struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeV2Actor) GetSharedDomainReturnsOnCall(i int, result1 v2action.Domain, result2 v2action.Warnings, result3 error) {
+	fake.GetSharedDomainStub = nil
+	if fake.getSharedDomainReturnsOnCall == nil {
+		fake.getSharedDomainReturnsOnCall = make(map[int]struct {
+			result1 v2action.Domain
+			result2 v2action.Warnings
+			result3 error
+		})
+	}
+	fake.getSharedDomainReturnsOnCall[i] = struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeV2Actor) GetPrivateDomain(domainGUID string) (v2action.Domain, v2action.Warnings, error) {
+	fake.getPrivateDomainMutex.Lock()
+	ret, specificReturn := fake.getPrivateDomainReturnsOnCall[len(fake.getPrivateDomainArgsForCall)]
+	fake.getPrivateDomainArgsForCall = append(fake.getPrivateDomainArgsForCall, struct {
+		domainGUID string
+	}{domainGUID})
+	fake.recordInvocation("GetPrivateDomain", []interface{}{domainGUID})
+	fake.getPrivateDomainMutex.Unlock()
+	if fake.GetPrivateDomainStub != nil {
+		return fake.GetPrivateDomainStub(domainGUID)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fake.getPrivateDomainReturns.result1, fake.getPrivateDomainReturns.result2, fake.getPrivateDomainReturns.result3
+}
+
+func (fake *FakeV2Actor) GetPrivateDomainCallCount() int {
+	fake.getPrivateDomainMutex.RLock()
+	defer fake.getPrivateDomainMutex.RUnlock()
+	return len(fake.getPrivateDomainArgsForCall)
+}
+
+func (fake *FakeV2Actor) GetPrivateDomainArgsForCall(i int) string {
+	fake.getPrivateDomainMutex.RLock()
+	defer fake.getPrivateDomainMutex.RUnlock()
+	return fake.getPrivateDomainArgsForCall[i].domainGUID
+}
+
+func (fake *FakeV2Actor) GetPrivateDomainReturns(result1 v2action.Domain, result2 v2action.Warnings, result3 error) {
+	fake.GetPrivateDomainStub = nil
+	fake.getPrivateDomainReturns = struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeV2Actor) GetPrivateDomainReturnsOnCall(i int, result1 v2action.Domain, result2 v2action.Warnings, result3 error) {
+	fake.GetPrivateDomainStub = nil
+	if fake.getPrivateDomainReturnsOnCall == nil {
+		fake.getPrivateDomainReturnsOnCall = make(map[int]struct {
+			result1 v2action.Domain
+			result2 v2action.Warnings
+			result3 error
+		})
+	}
+	fake.getPrivateDomainReturnsOnCall[i] = struct {
+		result1 v2action.Domain
+		result2 v2action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeV2Actor) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -231,6 +369,10 @@ func (fake *FakeV2Actor) Invocations() map[string][][]interface{} {
 	defer fake.getApplicationByNameAndSpaceMutex.RUnlock()
 	fake.updateApplicationMutex.RLock()
 	defer fake.updateApplicationMutex.RUnlock()
+	fake.getSharedDomainMutex.RLock()
+	defer fake.getSharedDomainMutex.RUnlock()
+	fake.getPrivateDomainMutex.RLock()
+	defer fake.getPrivateDomainMutex.RUnlock()
 	return fake.invocations
 }
 
