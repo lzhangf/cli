@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// Plugin represents a CLI plugin.
+type Plugin struct {
+	Name    string
+	Version string
+}
+
 // PluginNotFoundError is an error returned when a plugin is not found.
 type PluginNotFoundError struct {
 	Name string

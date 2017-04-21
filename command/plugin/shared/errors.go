@@ -38,3 +38,32 @@ func (e GettingPluginRepositoryError) Error() string {
 func (e GettingPluginRepositoryError) Translate(translate func(string, ...interface{}) string) string {
 	return translate(e.Error(), map[string]interface{}{"RepositoryName": e.Name, "ErrorMessage": e.Message})
 }
+
+// FileNotFoundError is returned when a local plugin binary is not found during
+// installation.
+type FileNotFoundError struct {
+	Path string
+}
+
+func (e FileNotFoundError) Error() string {
+	return "File not found locally, make sure the file exists at given path {{.filepath}}"
+}
+
+func (e FileNotFoundError) Translate(translate func(string, ...interface{}) string) string {
+	return translate(e.Error(), map[string]interface{}{
+		"filepath": e.Path,
+	})
+}
+
+// PluginInstallationCancelled is returned when the user chooses no during
+// plugin installation confirmation.
+type PluginInstallationCancelled struct {
+}
+
+func (e PluginInstallationCancelled) Error() string {
+	return "Plugin installation cancelled"
+}
+
+func (e PluginInstallationCancelled) Translate(translate func(string, ...interface{}) string) string {
+	return translate(e.Error())
+}
