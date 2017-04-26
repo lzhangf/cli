@@ -37,7 +37,12 @@ var _ = Describe("Translatable Errors", func() {
 
 		Entry("PluginNotFoundError", PluginNotFoundError{}),
 		Entry("NoPluginRepositoriesError", NoPluginRepositoriesError{}),
+		Entry("GettingPluginRepositoryError", GettingPluginRepositoryError{}),
 		Entry("FileNotFoundError", FileNotFoundError{}),
 		Entry("PluginInstallationCancelled", FileNotFoundError{}),
+		Entry("PluginInvalidError", PluginInvalidError{}),
+		Entry("PluginCommandConflictError", PluginCommandConflictError{}),
+		Entry("PluginAliasConflictError", PluginAliasConflictError{}),
+		Entry("PluginAlreadyInstalledError", PluginAlreadyInstalledError{}),
 	)
 })

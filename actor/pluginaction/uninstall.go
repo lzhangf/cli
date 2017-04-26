@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-// Plugin represents a CLI plugin.
-type Plugin struct {
-	Name    string
-	Version string
-}
-
 // PluginNotFoundError is an error returned when a plugin is not found.
 type PluginNotFoundError struct {
 	Name string
@@ -25,7 +19,7 @@ func (e PluginNotFoundError) Error() string {
 //go:generate counterfeiter . PluginUninstaller
 
 type PluginUninstaller interface {
-	Uninstall(pluginPath string) error
+	Run(pluginPath string, command string) error
 }
 
 func (actor Actor) UninstallPlugin(uninstaller PluginUninstaller, name string) error {
@@ -34,7 +28,7 @@ func (actor Actor) UninstallPlugin(uninstaller PluginUninstaller, name string) e
 		return PluginNotFoundError{Name: name}
 	}
 
-	err := uninstaller.Uninstall(plugin.Location)
+	err := uninstaller.Run(plugin.Location, "CLI-MESSAGE-UNINSTALL")
 	if err != nil {
 		return err
 	}

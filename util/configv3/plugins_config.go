@@ -19,7 +19,6 @@ type PluginsConfig struct {
 
 // Plugin represents the plugin as a whole, not be confused with PluginCommand
 type Plugin struct {
-	// repo, filepath, url
 	Name     string
 	Location string          `json:"Location"`
 	Version  PluginVersion   `json:"Version"`
@@ -31,6 +30,14 @@ type PluginVersion struct {
 	Major int `json:"Major"`
 	Minor int `json:"Minor"`
 	Build int `json:"Build"`
+}
+
+// String returns the plugin's version in the format x.y.z.
+func (v PluginVersion) String() string {
+	if v.Major == 0 && v.Minor == 0 && v.Build == 0 {
+		return "N/A"
+	}
+	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Build)
 }
 
 // PluginCommand represents an individual command inside a plugin
@@ -77,14 +84,6 @@ func (p Plugin) PluginCommands() []PluginCommand {
 		return strings.ToLower(p.Commands[i].Name) < strings.ToLower(p.Commands[j].Name)
 	})
 	return p.Commands
-}
-
-// String returns the plugin's version in the format x.y.z.
-func (v PluginVersion) String() string {
-	if v.Major == 0 && v.Minor == 0 && v.Build == 0 {
-		return "N/A"
-	}
-	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Build)
 }
 
 // CommandName returns the name of the plugin. The name is concatenated with

@@ -11,6 +11,7 @@ import (
 // Config a way of getting basic CF configuration
 type Config interface {
 	AccessToken() string
+	AddPlugin(configv3.Plugin)
 	APIVersion() string
 	BinaryName() string
 	BinaryVersion() string
@@ -25,8 +26,8 @@ type Config interface {
 	MinCLIVersion() string
 	OverallPollingTimeout() time.Duration
 	PluginHome() string
-	Plugins() []configv3.Plugin
 	PluginRepositories() []configv3.PluginRepository
+	Plugins() []configv3.Plugin
 	PollingInterval() time.Duration
 	RefreshToken() string
 	RemovePlugin(string)
@@ -39,11 +40,11 @@ type Config interface {
 	SkipSSLValidation() bool
 	StagingTimeout() time.Duration
 	StartupTimeout() time.Duration
+	Target() string
 	TargetedOrganization() configv3.Organization
 	TargetedSpace() configv3.Space
-	Target() string
-	UAAOAuthClientSecret() string
 	UAAOAuthClient() string
+	UAAOAuthClientSecret() string
 	UnsetOrganizationInformation()
 	UnsetSpaceInformation()
 	Verbose() (bool, []string)

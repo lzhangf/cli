@@ -1,20 +1,23 @@
-package plugin
+package common
 
 import (
 	"os"
 
 	"code.cloudfoundry.org/cli/actor/pluginaction"
 	oldCmd "code.cloudfoundry.org/cli/cf/cmd"
-
 	"code.cloudfoundry.org/cli/command"
 	"code.cloudfoundry.org/cli/command/flag"
 	"code.cloudfoundry.org/cli/command/plugin/shared"
+	"code.cloudfoundry.org/cli/util/configv3"
 )
 
 //go:generate counterfeiter . InstallPluginActor
+
 type InstallPluginActor interface {
 	FileExists(path string) bool
-	InstallPluginFromPath(path string) (pluginaction.Plugin, error)
+	ValidatePlugin(metadata pluginaction.PluginMetadata, commands pluginaction.CommandList, path string) (configv3.Plugin, error)
+	UninstallPlugin(uninstaller pluginaction.PluginUninstaller, name string) error
+	InstallPluginFromPath(path string, plugin configv3.Plugin) error
 }
 
 type InstallPluginCommand struct {
@@ -32,28 +35,24 @@ type InstallPluginCommand struct {
 func (cmd *InstallPluginCommand) Setup(config command.Config, ui command.UI) error {
 	cmd.UI = ui
 	cmd.Config = config
-
+	cmd.Actor = pluginaction.NewActor(config, nil)
 	return nil
 }
 
 func (cmd InstallPluginCommand) Execute(args []string) error {
+	//TODO: remove me
 	if !cmd.Config.Experimental() {
 		oldCmd.Main(os.Getenv("CF_TRACE"), os.Args)
 		return nil
 	}
-
 	cmd.UI.DisplayText(command.ExperimentalWarning)
 
-	var (
-		plugin pluginaction.Plugin
-		err    error
-	)
+	var plugin configv3.Plugin
+	pluginPath := string(cmd.OptionalArgs.LocalPath)
 
-	if cmd.OptionalArgs.LocalPath != "" {
-		if !cmd.Actor.FileExists(string(cmd.OptionalArgs.LocalPath)) {
-			return shared.FileNotFoundError{
-				Path: string(cmd.OptionalArgs.LocalPath),
-			}
+	if pluginPath != "" {
+		if !cmd.Actor.FileExists(pluginPath) {
+			return shared.FileNotFoundError{Path: pluginPath}
 		}
 
 		cmd.UI.DisplayText("Attention: Plugins are binaries written by potentially untrusted authors.")
@@ -61,31 +60,61 @@ func (cmd InstallPluginCommand) Execute(args []string) error {
 
 		if !cmd.Force {
 			really, promptErr := cmd.UI.DisplayBoolPrompt(false, "Do you want to install the plugin {{.Path}}?", map[string]interface{}{
-				"Path": cmd.OptionalArgs.LocalPath,
+				"Path": pluginPath,
 			})
 			if promptErr != nil {
 				return promptErr
 			}
-
 			if !really {
 				return shared.PluginInstallationCancelled{}
 			}
 		}
 
-		cmd.UI.DisplayTextWithFlavor("Installing plugin {{.PluginPath}}...", map[string]interface{}{
-			"PluginPath": cmd.OptionalArgs.LocalPath,
-		})
-		plugin, err = cmd.Actor.InstallPluginFromPath(string(cmd.OptionalArgs.LocalPath))
-		if err != nil {
-			return err
-		}
-	}
+		var err error
+		plugin, err = cmd.Actor.ValidatePlugin(nil, Commands, pluginPath)
+		if e, ok := err.(pluginaction.PluginAlreadyInstalledError); ok {
+			if !cmd.Force {
+				return shared.PluginAlreadyInstalledError{
+					Name:              e.Name,
+					Version:           e.Version,
+					Path:              pluginPath,
+					WrappedErrMessage: e.Error(),
+				}
+			}
 
-	cmd.UI.DisplayOK()
-	cmd.UI.DisplayTextWithFlavor("Plugin {{.Name}} {{.Version}} successfully installed.", map[string]interface{}{
-		"Name":    plugin.Name,
-		"Version": plugin.Version,
-	})
+			cmd.UI.DisplayText("Plugin {{.Name}} {{.Version}} is already installed. Uninstalling existing plugin...", map[string]interface{}{
+				"Name":    plugin.Name,
+				"Version": plugin.Version,
+			})
+
+			uninstallErr := cmd.Actor.UninstallPlugin(nil, plugin.Name)
+			if uninstallErr != nil {
+				return uninstallErr
+			}
+
+			cmd.UI.DisplayOK()
+			cmd.UI.DisplayText("Plugin {{.Name}} successfully uninstalled.", map[string]interface{}{
+				"Name": plugin.Name,
+			})
+		} else if err != nil {
+			return shared.HandleError(err)
+		}
+
+		cmd.UI.DisplayTextWithFlavor("Installing plugin {{.Name}}...", map[string]interface{}{
+			"Name": plugin.Name,
+		})
+
+		installErr := cmd.Actor.InstallPluginFromPath(pluginPath, plugin)
+		if installErr != nil {
+			return installErr
+		}
+
+		cmd.UI.DisplayOK()
+		cmd.UI.DisplayTextWithFlavor("Plugin {{.Name}} {{.Version}} successfully installed.", map[string]interface{}{
+			"Name":    plugin.Name,
+			"Version": plugin.Version,
+		})
+	}
 
 	return nil
 }
