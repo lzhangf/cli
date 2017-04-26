@@ -65,6 +65,9 @@ func (actor Actor) ConvertToApplicationConfig(orgGUID string, spaceGUID string, 
 		}
 		config.DesiredRoutes = []v2action.Route{defaultRoute}
 
+		//Gather files here
+		//set on config
+
 		configs = append(configs, config)
 	}
 

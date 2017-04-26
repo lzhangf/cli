@@ -17,6 +17,7 @@ func (actor Actor) Apply(config ApplicationConfig) (<-chan Event, <-chan Warning
 		defer close(errorStream)
 
 		if config.DesiredApplication.GUID != "" {
+			// upload app
 			log.Debugf("updating application: %#v", config.DesiredApplication)
 			app, warnings, err := actor.V2Actor.UpdateApplication(config.DesiredApplication)
 			warningsStream <- Warnings(warnings)
@@ -38,6 +39,8 @@ func (actor Actor) Apply(config ApplicationConfig) (<-chan Event, <-chan Warning
 			}
 			config.DesiredApplication = app
 			eventStream <- ApplicationCreated
+
+			// upload app
 		}
 		log.Debugf("desired application: %#v", config.DesiredApplication)
 

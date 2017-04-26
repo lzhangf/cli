@@ -32,6 +32,7 @@ func (retry *RetryRequest) Wrap(innerconnection cloudcontroller.Connection) clou
 func (retry *RetryRequest) Make(request *http.Request, passedResponse *cloudcontroller.Response) error {
 	var err error
 	var rawRequestBody []byte
+	//skip
 
 	if request.Body != nil && request.Method != http.MethodPost {
 		rawRequestBody, err = ioutil.ReadAll(request.Body)

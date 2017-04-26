@@ -1,7 +1,10 @@
 package ccv2
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"mime/multipart"
 	"net/url"
 	"time"
 
@@ -9,6 +12,13 @@ import (
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccerror"
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2/internal"
 )
+
+//go:generate counterfeiter . Reader
+
+// Reader is an io.Reader.
+type Reader interface {
+	io.Reader
+}
 
 // JobStatus is the current state of a job.
 type JobStatus string
@@ -68,7 +78,7 @@ func (job Job) Failed() bool {
 func (client *Client) GetJob(jobGUID string) (Job, Warnings, error) {
 	request, err := client.newHTTPRequest(requestOptions{
 		RequestName: internal.GetJobRequest,
-		URIParams:   map[string]string{"job_guid": jobGUID},
+		URIParams:   Params{"job_guid": jobGUID},
 	})
 	if err != nil {
 		return Job{}, nil, err
@@ -129,7 +139,7 @@ func (client *Client) PollJob(job Job) (Warnings, error) {
 func (client *Client) DeleteOrganization(orgGUID string) (Job, Warnings, error) {
 	request, err := client.newHTTPRequest(requestOptions{
 		RequestName: internal.DeleteOrganizationRequest,
-		URIParams:   map[string]string{"organization_guid": orgGUID},
+		URIParams:   Params{"organization_guid": orgGUID},
 		Query: url.Values{
 			"recursive": {"true"},
 			"async":     {"true"},
@@ -146,4 +156,83 @@ func (client *Client) DeleteOrganization(orgGUID string) (Job, Warnings, error) 
 
 	err = client.connection.Make(request, &response)
 	return job, response.Warnings, err
+}
+
+// UploadApplicationBits uploads the newResources and a list of existing
+// resources to the cloud controller. A job that combines the requested/newly
+// uploaded bits is returned.
+func (client *Client) UploadApplicationBits(appGUID string, existingResources []Resource, newResources Reader) (Job, Warnings, error) {
+	if existingResources == nil {
+		return Job{}, nil, ccerror.NilObjectError{Object: "existingResources"}
+	}
+	if newResources == nil {
+		return Job{}, nil, ccerror.NilObjectError{Object: "newResources"}
+	}
+
+	request, err := client.newHTTPRequest(requestOptions{
+		RequestName: internal.PutAppBitsRequest,
+		URIParams:   Params{"app_guid": appGUID},
+		Query: url.Values{
+			"async": {"true"},
+		},
+	})
+	if err != nil {
+		return Job{}, nil, err
+	}
+
+	// Forces Transfer-Encoding = 'chunked'
+	request.ContentLength = 0
+
+	// dragons
+	contentType, body, _ := client.createMultipartBodyAndHeaderForAppBits(existingResources, newResources)
+
+	request.Header.Set("Content-Type", contentType)
+	request.Body = body
+
+	var job Job
+	response := cloudcontroller.Response{
+		Result: &job,
+	}
+
+	err = client.connection.Make(request, &response)
+
+	return job, response.Warnings, err
+}
+
+func (client *Client) createMultipartBodyAndHeaderForAppBits(existingResources []Resource, newResources io.Reader) (string, io.ReadCloser, <-chan error) {
+	writerOutput, writerInput := io.Pipe()
+	form := multipart.NewWriter(writerInput)
+
+	writeErrors := make(chan error)
+
+	go func() {
+		defer writerInput.Close()
+		defer form.Close()
+
+		jsonResources, err := json.Marshal(existingResources)
+		if err != nil {
+			return
+		}
+		form.WriteField("resources", string(jsonResources))
+
+		writer, _ := form.CreateFormFile("application", "application.zip")
+		io.Copy(writer, newResources)
+	}()
+
+	return form.FormDataContentType(), writerOutput, writeErrors
+}
+
+func (client *Client) formHeaderForAppUploadSize(existingResources []Resource) (int64, error) {
+	body := &bytes.Buffer{}
+	form := multipart.NewWriter(body)
+
+	jsonResources, err := json.Marshal(existingResources)
+	if err != nil {
+		return 0, err
+	}
+	form.WriteField("resources", string(jsonResources))
+	form.CreateFormFile("application", "application.zip")
+	form.Close()
+
+	return int64(body.Len()), nil
 }

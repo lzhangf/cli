@@ -13,6 +13,32 @@ import (
 
 type Resource ccv2.Resource
 
+func (actor Actor) GatherResources(sourceDir string) ([]Resource, error) {
+	var resources []Resource
+	walkErr := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return nil
+		}
+
+		if relPath == "." {
+			return nil
+		}
+
+		resources = append(resources, Resource{
+			Filename: filepath.ToSlash(relPath),
+		})
+
+		return nil
+	})
+
+	return resources, walkErr
+}
+
 // ZipResources zips a directory and a sorted (based on full path/filename)
 // list of resources and returns the location. On Windows, the filemode for
 // user is forced to be readable and executable.

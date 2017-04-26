@@ -17,40 +17,55 @@ var _ = Describe("Resource Actions", func() {
 	var (
 		actor                     Actor
 		fakeCloudControllerClient *v2actionfakes.FakeCloudControllerClient
+		srcDir                    string
 	)
 
 	BeforeEach(func() {
 		fakeCloudControllerClient = new(v2actionfakes.FakeCloudControllerClient)
 		actor = NewActor(fakeCloudControllerClient, nil)
+
+		var err error
+		srcDir, err = ioutil.TempDir("", "")
+		Expect(err).ToNot(HaveOccurred())
+
+		subDir := filepath.Join(srcDir, "level1", "level2")
+		err = os.MkdirAll(subDir, 0777)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = ioutil.WriteFile(filepath.Join(subDir, "tmpFile1"), []byte("why hello"), 0600)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = ioutil.WriteFile(filepath.Join(srcDir, "tmpFile2"), []byte("Hello, Binky"), 0600)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = ioutil.WriteFile(filepath.Join(srcDir, "tmpFile3"), []byte("Bananarama"), 0600)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	Describe("GatherResources", func() {
+		It("gathers a list of all directories files in a source directory", func() {
+			resources, err := actor.GatherResources(srcDir)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(resources).To(Equal(
+				[]Resource{
+					{Filename: "level1"},
+					{Filename: "level1/level2"},
+					{Filename: "level1/level2/tmpFile1"},
+					{Filename: "tmpFile2"},
+					{Filename: "tmpFile3"},
+				}))
+		})
 	})
 
 	Describe("ZipResources", func() {
 		var (
-			srcDir string
-
 			resultZip  string
 			resources  []Resource
 			executeErr error
 		)
 
 		BeforeEach(func() {
-			var err error
-			srcDir, err = ioutil.TempDir("", "")
-			Expect(err).ToNot(HaveOccurred())
-
-			subDir := filepath.Join(srcDir, "level1", "level2")
-			err = os.MkdirAll(subDir, 0777)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = ioutil.WriteFile(filepath.Join(subDir, "tmpFile1"), []byte("why hello"), 0600)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = ioutil.WriteFile(filepath.Join(srcDir, "tmpFile2"), []byte("Hello, Binky"), 0600)
-			Expect(err).ToNot(HaveOccurred())
-
-			err = ioutil.WriteFile(filepath.Join(srcDir, "tmpFile3"), []byte("Bananarama"), 0600)
-			Expect(err).ToNot(HaveOccurred())
-
 			resources = []Resource{
 				{Filename: "level1"},
 				{Filename: "level1/level2"},
